@@ -40,189 +40,189 @@ import com.google.gson.JsonSerializer;
  */
 public class JsonConfiguration extends FileConfiguration {
 
-	private static final Gson GSON;
+    private static final Gson GSON;
 
-	static {
-		GSON = new GsonBuilder()
-				/* Serializers */
-				.registerTypeHierarchyAdapter(Map.class,
-						(JsonSerializer<Map<String, Object>>) JsonConfiguration::serializeMap)
-				.registerTypeHierarchyAdapter(List.class,
-						(JsonSerializer<List<Object>>) JsonConfiguration::serializeArray)
-				.registerTypeHierarchyAdapter(ConfigurationSerializable.class,
-						(JsonSerializer<ConfigurationSerializable>) JsonConfiguration::serializeConfiguration)
-				/* Deserializers */
-				.registerTypeHierarchyAdapter(Map.class,
-						(JsonDeserializer<Map<String, Object>>) JsonConfiguration::deserializeMap)
-				.registerTypeHierarchyAdapter(List.class,
-						(JsonDeserializer<List<Object>>) JsonConfiguration::deserializeArray)
-				.registerTypeHierarchyAdapter(ConfigurationSerializable.class,
-						(JsonDeserializer<ConfigurationSerializable>) JsonConfiguration::deserializeConfiguration)
-				.setPrettyPrinting().serializeNulls().create();
-	}
+    static {
+        GSON = new GsonBuilder()
+                /* Serializers */
+                .registerTypeHierarchyAdapter(Map.class,
+                        (JsonSerializer<Map<String, Object>>) JsonConfiguration::serializeMap)
+                .registerTypeHierarchyAdapter(List.class,
+                        (JsonSerializer<List<Object>>) JsonConfiguration::serializeArray)
+                .registerTypeHierarchyAdapter(ConfigurationSerializable.class,
+                        (JsonSerializer<ConfigurationSerializable>) JsonConfiguration::serializeConfiguration)
+                /* Deserializers */
+                .registerTypeHierarchyAdapter(Map.class,
+                        (JsonDeserializer<Map<String, Object>>) JsonConfiguration::deserializeMap)
+                .registerTypeHierarchyAdapter(List.class,
+                        (JsonDeserializer<List<Object>>) JsonConfiguration::deserializeArray)
+                .registerTypeHierarchyAdapter(ConfigurationSerializable.class,
+                        (JsonDeserializer<ConfigurationSerializable>) JsonConfiguration::deserializeConfiguration)
+                .setPrettyPrinting().serializeNulls().create();
+    }
 
-	@Override
-	protected String buildHeader() {
-		return "";
-	}
+    @Override
+    protected String buildHeader() {
+        return "";
+    }
 
-	@Override
-	public void loadFromString(String contents) throws InvalidConfigurationException {
-		Map<?, ?> map;
-		try {
-			map = GSON.fromJson(contents, Map.class);
-		} catch (Exception e) {
-			throw new InvalidConfigurationException("Failed to parse the content", e);
-		}
+    @Override
+    public void loadFromString(String contents) throws InvalidConfigurationException {
+        Map<?, ?> map;
+        try {
+            map = GSON.fromJson(contents, Map.class);
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("Failed to parse the content", e);
+        }
 
-		for (Entry<?, ?> entry : map.entrySet()) {
-			String key = entry.getKey().toString();
-			Object value = entry.getValue();
+        for (Entry<?, ?> entry : map.entrySet()) {
+            String key = entry.getKey().toString();
+            Object value = entry.getValue();
 
-			if (value instanceof Map) {
-				this.createSection(key, (Map<?, ?>) value);
-			} else {
-				this.set(key, value);
-			}
-		}
-	}
+            if (value instanceof Map) {
+                this.createSection(key, (Map<?, ?>) value);
+            } else {
+                this.set(key, value);
+            }
+        }
+    }
 
-	@Override
-	public String saveToString() {
-		return GSON.toJson(this.map);
-	}
+    @Override
+    public String saveToString() {
+        return GSON.toJson(this.map);
+    }
 
-	public static JsonConfiguration loadConfiguration(File file) {
-		Validate.notNull(file, "File cannot be null");
-		JsonConfiguration config = new JsonConfiguration();
+    public static JsonConfiguration loadConfiguration(File file) {
+        Validate.notNull(file, "File cannot be null");
+        JsonConfiguration config = new JsonConfiguration();
 
-		try {
-			config.load(file);
-		} catch (IOException | InvalidConfigurationException e) {
-			Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, e);
-		}
+        try {
+            config.load(file);
+        } catch (IOException | InvalidConfigurationException e) {
+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, e);
+        }
 
-		return config;
-	}
+        return config;
+    }
 
-	private static JsonElement serializeMap(Map<String, Object> src, Type typeOfSrc, JsonSerializationContext context) {
-		JsonObject object = new JsonObject();
+    private static JsonElement serializeMap(Map<String, Object> src, Type typeOfSrc, JsonSerializationContext context) {
+        JsonObject object = new JsonObject();
 
-		for (Entry<String, Object> entry : src.entrySet()) {
-			object.add(entry.getKey(), serializeValue(entry.getValue(), context));
-		}
+        for (Entry<String, Object> entry : src.entrySet()) {
+            object.add(entry.getKey(), serializeValue(entry.getValue(), context));
+        }
 
-		System.out.println(object);
+        System.out.println(object);
 
-		return object;
-	}
+        return object;
+    }
 
-	private static JsonElement serializeArray(List<Object> src, Type srcOfType, JsonSerializationContext context) {
-		JsonArray array = new JsonArray();
+    private static JsonElement serializeArray(List<Object> src, Type srcOfType, JsonSerializationContext context) {
+        JsonArray array = new JsonArray();
 
-		for (Object object : src) {
-			array.add(serializeValue(object, context));
-		}
+        for (Object object : src) {
+            array.add(serializeValue(object, context));
+        }
 
-		return array;
-	}
+        return array;
+    }
 
-	private static JsonElement serializeConfiguration(ConfigurationSerializable src, Type typeOfSrc,
-			JsonSerializationContext context) {
-		Map<String, Object> map = new LinkedHashMap<>();
-		String typeToken = ConfigurationSerialization.getAlias(src.getClass());
+    private static JsonElement serializeConfiguration(ConfigurationSerializable src, Type typeOfSrc,
+            JsonSerializationContext context) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        String typeToken = ConfigurationSerialization.getAlias(src.getClass());
 
-		map.put(ConfigurationSerialization.SERIALIZED_TYPE_KEY, typeToken);
-		map.putAll(src.serialize());
+        map.put(ConfigurationSerialization.SERIALIZED_TYPE_KEY, typeToken);
+        map.putAll(src.serialize());
 
-		return context.serialize(map, Map.class);
-	}
+        return context.serialize(map, Map.class);
+    }
 
-	private static Map<String, Object> deserializeMap(JsonElement json, Type typeOfT,
-			JsonDeserializationContext context) {
-		if (!json.isJsonObject()) {
-			throw new JsonParseException("Expected JsonObject, got " + json.getClass().getSimpleName());
-		}
+    private static Map<String, Object> deserializeMap(JsonElement json, Type typeOfT,
+            JsonDeserializationContext context) {
+        if (!json.isJsonObject()) {
+            throw new JsonParseException("Expected JsonObject, got " + json.getClass().getSimpleName());
+        }
 
-		JsonObject object = json.getAsJsonObject();
-		Map<String, Object> map = new LinkedHashMap<>(object.size(), 1.0F);
-		for (Entry<String, JsonElement> entry : object.entrySet()) {
-			map.put(entry.getKey(), deserializeValue(entry.getValue(), context));
-		}
-		return map;
-	}
+        JsonObject object = json.getAsJsonObject();
+        Map<String, Object> map = new LinkedHashMap<>(object.size(), 1.0F);
+        for (Entry<String, JsonElement> entry : object.entrySet()) {
+            map.put(entry.getKey(), deserializeValue(entry.getValue(), context));
+        }
+        return map;
+    }
 
-	private static List<Object> deserializeArray(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
-		if (!json.isJsonArray()) {
-			throw new JsonParseException("Expected JsonArray, got " + json.getClass().getSimpleName());
-		}
+    private static List<Object> deserializeArray(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
+        if (!json.isJsonArray()) {
+            throw new JsonParseException("Expected JsonArray, got " + json.getClass().getSimpleName());
+        }
 
-		JsonArray array = json.getAsJsonArray();
-		List<Object> list = new ArrayList<>(array.size());
-		for (JsonElement element : array) {
-			list.add(deserializeValue(element, context));
-		}
-		return list;
-	}
+        JsonArray array = json.getAsJsonArray();
+        List<Object> list = new ArrayList<>(array.size());
+        for (JsonElement element : array) {
+            list.add(deserializeValue(element, context));
+        }
+        return list;
+    }
 
-	private static ConfigurationSerializable deserializeConfiguration(JsonElement json, Type typeOfT,
-			JsonDeserializationContext context) {
-		if (!json.isJsonObject()) {
-			throw new JsonParseException("Expected JsonObject, got " + json.getClass().getSimpleName());
-		}
+    private static ConfigurationSerializable deserializeConfiguration(JsonElement json, Type typeOfT,
+            JsonDeserializationContext context) {
+        if (!json.isJsonObject()) {
+            throw new JsonParseException("Expected JsonObject, got " + json.getClass().getSimpleName());
+        }
 
-		Map<String, Object> map = context.deserialize(json, Map.class);
-		try {
-			return ConfigurationSerialization.deserializeObject(map);
-		} catch (Exception e) {
-			throw new JsonParseException(e);
-		}
-	}
+        Map<String, Object> map = context.deserialize(json, Map.class);
+        try {
+            return ConfigurationSerialization.deserializeObject(map);
+        } catch (Exception e) {
+            throw new JsonParseException(e);
+        }
+    }
 
-	private static JsonElement serializeValue(Object object, JsonSerializationContext context) {
-		if (object instanceof MemorySection) {
-			MemorySection section = (MemorySection) object;
-			Map<String, Object> map = section.getKeys(false).stream().collect(toMap(key -> key, section::get));
-			return context.serialize(map, Map.class);
-		} else if (object instanceof ConfigurationSerializable) {
-			return context.serialize(object, ConfigurationSerializable.class);
-		} else if (object instanceof List) {
-			return context.serialize(object, List.class);
-		}
-		return context.serialize(object);
-	}
+    private static JsonElement serializeValue(Object object, JsonSerializationContext context) {
+        if (object instanceof MemorySection) {
+            MemorySection section = (MemorySection) object;
+            Map<String, Object> map = section.getKeys(false).stream().collect(toMap(key -> key, section::get));
+            return context.serialize(map, Map.class);
+        } else if (object instanceof ConfigurationSerializable) {
+            return context.serialize(object, ConfigurationSerializable.class);
+        } else if (object instanceof List) {
+            return context.serialize(object, List.class);
+        }
+        return context.serialize(object);
+    }
 
-	private static Object deserializeValue(JsonElement element, JsonDeserializationContext context) {
-		if (element.isJsonObject()) {
-			JsonObject object = element.getAsJsonObject();
-			if (object.has(ConfigurationSerialization.SERIALIZED_TYPE_KEY)) {
-				return context.deserialize(element, ConfigurationSerializable.class);
-			} else {
-				return context.deserialize(element, Map.class);
-			}
-		} else if (element.isJsonArray()) {
-			return context.deserialize(element, List.class);
-		} else if (element.isJsonPrimitive()) {
-			JsonPrimitive primitive = element.getAsJsonPrimitive();
-			if (primitive.isString()) {
-				return primitive.getAsString();
-			} else if (primitive.isBoolean()) {
-				return primitive.getAsBoolean();
-			} else if (primitive.isNumber()) {
-				String numberString = primitive.getAsString();
-				if (numberString.contains(".")) {
-					return primitive.getAsDouble();
-				}
-				int number = primitive.getAsInt();
-				if (numberString.equals(String.valueOf(number))) {
-					return primitive.getAsInt();
-				}
-				return primitive.getAsLong();
-			}
-			throw new JsonParseException("Unknown json primitive: " + primitive.getClass().getSimpleName());
-		} else if (element.isJsonNull()) {
-			return null;
-		}
-		throw new JsonParseException("Unknown json type: " + element.getClass().getSimpleName());
-	}
+    private static Object deserializeValue(JsonElement element, JsonDeserializationContext context) {
+        if (element.isJsonObject()) {
+            JsonObject object = element.getAsJsonObject();
+            if (object.has(ConfigurationSerialization.SERIALIZED_TYPE_KEY)) {
+                return context.deserialize(element, ConfigurationSerializable.class);
+            } else {
+                return context.deserialize(element, Map.class);
+            }
+        } else if (element.isJsonArray()) {
+            return context.deserialize(element, List.class);
+        } else if (element.isJsonPrimitive()) {
+            JsonPrimitive primitive = element.getAsJsonPrimitive();
+            if (primitive.isString()) {
+                return primitive.getAsString();
+            } else if (primitive.isBoolean()) {
+                return primitive.getAsBoolean();
+            } else if (primitive.isNumber()) {
+                String numberString = primitive.getAsString();
+                if (numberString.contains(".")) {
+                    return primitive.getAsDouble();
+                }
+                int number = primitive.getAsInt();
+                if (numberString.equals(String.valueOf(number))) {
+                    return primitive.getAsInt();
+                }
+                return primitive.getAsLong();
+            }
+            throw new JsonParseException("Unknown json primitive: " + primitive.getClass().getSimpleName());
+        } else if (element.isJsonNull()) {
+            return null;
+        }
+        throw new JsonParseException("Unknown json type: " + element.getClass().getSimpleName());
+    }
 }
