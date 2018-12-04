@@ -112,8 +112,6 @@ public class JsonConfiguration extends FileConfiguration {
             object.add(entry.getKey(), serializeValue(entry.getValue(), context));
         }
 
-        System.out.println(object);
-
         return object;
     }
 
